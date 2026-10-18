@@ -20,7 +20,7 @@ Public policy: [SECURITY.md](../../SECURITY.md) (English). Reports use [GitHub p
 All workflows under `.github/workflows/`:
 
 - Top-level `permissions: contents: read`
-- Job-level least privilege (Scorecard job adds `security-events: write` and `id-token: write` only where needed)
+- Job-level least privilege (Scorecard job adds `security-events: write` for the SARIF upload and `id-token: write` for publishing)
 - Third-party actions pinned to **full commit SHAs** with version comments
 - `actions/checkout` uses `persist-credentials: false`
 
@@ -32,4 +32,4 @@ All workflows under `.github/workflows/`:
 
 ## OpenSSF Scorecard
 
-Scheduled weekly (Monday 08:00 UTC) and on pushes to `master`. With `publish_results: true`, scores are sent to the [OpenSSF Scorecard API](https://securityscorecards.dev/) (OIDC via `id-token: write`). `scorecard-action` requires `results_file` and `results_format`, so the workflow writes `results.sarif` (SARIF) on the runner; this workflow does not upload SARIF to GitHub code scanning.
+Scheduled weekly (Monday 08:00 UTC) and on pushes to `master`. With `publish_results: true`, scores are sent to the [OpenSSF Scorecard API](https://securityscorecards.dev/) (OIDC via `id-token: write`). The action writes `results.sarif` (`results_file` and `results_format` are required inputs), and `github/codeql-action/upload-sarif` uploads it to GitHub code scanning (`security-events: write`), so Scorecard findings appear under the repository's **Security → Code scanning** alerts.
