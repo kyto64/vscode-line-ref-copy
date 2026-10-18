@@ -32,4 +32,4 @@ All workflows under `.github/workflows/`:
 
 ## OpenSSF Scorecard
 
-Scheduled weekly (Monday 08:00 UTC) and on pushes to `master`. With `publish_results: true`, scores are sent to the [OpenSSF Scorecard API](https://securityscorecards.dev/) (OIDC via `id-token: write`). This workflow does not upload SARIF to GitHub code scanning.
+Scheduled weekly (Monday 08:00 UTC) and on pushes to `master`. With `publish_results: true`, scores are sent to the [OpenSSF Scorecard API](https://securityscorecards.dev/) (OIDC via `id-token: write`). `scorecard-action` requires `results_file` and `results_format`, so the workflow writes `results.sarif` (SARIF) on the runner; this workflow does not upload SARIF to GitHub code scanning.
