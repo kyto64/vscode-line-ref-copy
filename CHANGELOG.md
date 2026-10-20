@@ -4,10 +4,6 @@
 
 Documentation and development tooling update; no extension behavior changes. Still a preview release.
 
-### Added
-
-- Demo GIF in the README showing selection, context-menu copy, and paste with a relative path and line numbers.
-
 ### Changed
 
 - Development tooling migrated from Cursor to Devin, with rulesync updated to 33.0.0 and contributor workflow improvements.
@@ -22,6 +18,7 @@ First preview release of **Line Ref Copy** (fork of [yassh/vscode-copy-with-line
 - Command IDs under `lineRefCopy.*` and setting `lineRefCopy.showSuccessMessage`.
 - Editor context menu entry for **Line Ref Copy: With Relative Path** when text is selected.
 - Integration tests (`@vscode/test-electron`) and VSIX packaging via `@vscode/vsce`.
+- Demo GIF in the README showing selection, context-menu copy, and paste with a relative path and line numbers.
 
 ### Changed
 
