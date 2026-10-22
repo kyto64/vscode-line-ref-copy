@@ -16,7 +16,7 @@ const OPTION_WITH_FILE_NAME = 'withFileName'
 
 const MULTI_SELECTION_SEPARATOR = '---'
 
-async function copyLineRef(option?) {
+async function copyLineRef(option?: string) {
   const editor = vscode.window.activeTextEditor
   if (!editor) {
     vscode.window.showInformationMessage('No editor is active')
@@ -78,7 +78,7 @@ async function copyLineRef(option?) {
   }
 }
 
-export const commands = {
+export const commands: Record<string, () => Promise<void>> = {
   [LINE_REF_COPY_WITHOUT_PATH]: () => copyLineRef(),
   [LINE_REF_COPY_WITH_FULL_PATH]: () => copyLineRef(OPTION_WITH_FULL_PATH),
   [LINE_REF_COPY_WITH_RELATIVE_PATH]: () => copyLineRef(OPTION_WITH_RELATIVE_PATH),

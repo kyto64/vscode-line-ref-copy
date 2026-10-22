@@ -32,7 +32,7 @@ CI required checks: `build` (`.github/workflows/ci.yml`) and `check-rulesync` (`
 - Runtime: VS Code Extension API (`vscode` module)
 - Language: TypeScript (compile to `out/`)
 - Clipboard: `vscode.env.clipboard.writeText` (no native `copy-paste` module at runtime)
-- Quality: ESLint 10 + TypeScript 5; CI in `.github/workflows/ci.yml` (compile, lint, `xvfb-run` tests); supply-chain: SHA-pinned Actions, Dependabot, OpenSSF Scorecard (see `docs/operations/security.md`)
+- Quality: Oxlint + TypeScript 7; CI in `.github/workflows/ci.yml` (compile, lint, `xvfb-run` tests); supply-chain: SHA-pinned Actions, Dependabot, OpenSSF Scorecard (see `docs/operations/security.md`)
 - Issue tracking: GitHub Issues + `gh`
 - AI settings: rulesync (`.rulesync/` → `npm run rules:generate`)
 

@@ -17,7 +17,7 @@ docs/**
 .gitignore
 .gitattributes
 tsconfig.json
-eslint.config.mjs
+.oxlintrc.json
 rulesync.jsonc
 .env*
 *.log

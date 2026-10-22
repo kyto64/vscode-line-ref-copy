@@ -15,7 +15,7 @@ Copy selected lines with line numbers and optional file path—ready to paste in
 - Clipboard via `vscode.env.clipboard` (multi-byte text and remote-friendly).
 - Editor context menu: **With Relative Path** when text is selected.
 - Multi-root–aware relative paths (`getWorkspaceFolder`).
-- ESLint, GitHub Actions CI, rulesync-based contributor docs, and `@vscode/test-electron` integration tests.
+- Oxlint, GitHub Actions CI, rulesync-based contributor docs, and `@vscode/test-electron` integration tests.
 
 ## Commands
 
