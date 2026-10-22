@@ -1,6 +1,6 @@
 import { glob, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import yaml from 'js-yaml'
+import * as yaml from 'js-yaml'
 
 function parseSkill(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
