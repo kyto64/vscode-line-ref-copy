@@ -55,8 +55,8 @@ npm test          # headless Linux: xvfb-run -a npm test
 
 | Tool | Role |
 |------|------|
-| TypeScript 5.x | Compile `src/` → `out/` |
-| Oxlint | Lint (`.oxlintrc.json`; ignores `out/`, `node_modules/`, `.vscode-test/`) |
+| TypeScript 7.x | Compile `src/` → `out/` |
+| Oxlint | Lint (`.oxlintrc.json`; ignores `out/`, `node_modules/`, `.vscode-test/`). Oxlint has no rules for `semi: never` or `max-len: 120`, so they are not enforced by lint (a formatter is out of scope for now) |
 | `@vscode/test-electron` | Download VS Code build and run extension tests |
 | `engines.vscode` | `^1.74.0` (`@types/vscode` ~1.74.0) |
 | Node.js (CI) | **24** (Active LTS); `@types/node` ^24 |

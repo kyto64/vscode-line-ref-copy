@@ -93,7 +93,7 @@ See [docs/development/language-policy.md](./docs/development/language-policy.md)
 - Source lives under `src/`; compiled output under `out/` (do not edit `out/` by hand).
 - Use `'use strict'` and existing import style (`import * as vscode from 'vscode'`).
 - Register commands in `src/extension.ts`; command implementation in `src/line-ref-copy.ts`.
-- Follow Oxlint (`.oxlintrc.json`; keep semicolons off and lines under 120 characters by convention); run `npm run lint` and `npm run compile` before PRs.
+- Follow Oxlint (`.oxlintrc.json`; keep semicolons off and lines under 120 characters by convention; Oxlint has no matching rules, so these two are not enforced by lint); run `npm run lint` and `npm run compile` before PRs.
 
 ## Quality
 
