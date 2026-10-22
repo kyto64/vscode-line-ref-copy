@@ -37,7 +37,7 @@ src/line-ref-copy.ts
 | `@types/vscode` (~1.74.0) | VS Code extension API types |
 | `@vscode/test-electron` | CI/local integration test host (`test/runTest.ts`) |
 | `typescript` | Compile to `out/` |
-| `eslint` / `typescript-eslint` | Static analysis (`eslint.config.mjs`) |
+| `oxlint` | Static analysis (`.oxlintrc.json`) |
 | `@vscode/vsce` | Local VSIX packaging (`npm run vsce:package`) |
 
 There are **no runtime npm dependencies** (line numbers use `String.prototype.padStart`). Clipboard I/O goes through `vscode.env.clipboard` (see comment in source citing mrVanDalo's MIT-licensed approach).

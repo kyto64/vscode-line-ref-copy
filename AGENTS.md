@@ -29,7 +29,7 @@ CI required checks: `build` (`.github/workflows/ci.yml`) and `check-rulesync` (`
 - Runtime: VS Code Extension API (`vscode` module)
 - Language: TypeScript (compile to `out/`)
 - Clipboard: `vscode.env.clipboard.writeText` (no native `copy-paste` module at runtime)
-- Quality: ESLint 10 + TypeScript 5; CI in `.github/workflows/ci.yml` (compile, lint, `xvfb-run` tests); supply-chain: SHA-pinned Actions, Dependabot, OpenSSF Scorecard (see `docs/operations/security.md`)
+- Quality: Oxlint + TypeScript 7; CI in `.github/workflows/ci.yml` (compile, lint, `xvfb-run` tests); supply-chain: SHA-pinned Actions, Dependabot, OpenSSF Scorecard (see `docs/operations/security.md`)
 - Issue tracking: GitHub Issues + `gh`
 - AI settings: rulesync (`.rulesync/` → `npm run rules:generate`)
 
@@ -93,7 +93,7 @@ See [docs/development/language-policy.md](./docs/development/language-policy.md)
 - Source lives under `src/`; compiled output under `out/` (do not edit `out/` by hand).
 - Use `'use strict'` and existing import style (`import * as vscode from 'vscode'`).
 - Register commands in `src/extension.ts`; command implementation in `src/line-ref-copy.ts`.
-- Follow ESLint (`eslint.config.mjs`, semicolons off, max line length 120); run `npm run lint` and `npm run compile` before PRs.
+- Follow Oxlint (`.oxlintrc.json`; keep semicolons off and lines under 120 characters by convention); run `npm run lint` and `npm run compile` before PRs.
 
 ## Quality
 
