@@ -63,7 +63,7 @@ npm test          # headless Linux: xvfb-run -a npm test
 
 ## Release / marketplace
 
-Publisher id in `package.json`: `kyto64`. Extension id: `line-ref-copy` (**Line Ref Copy**). See [release.md](./release.md) for manual-first publishing (no automated workflow yet). Document version bumps in `CHANGELOG.md` when cutting releases.
+Publisher id in `package.json`: `kyto64`. Extension id: `line-ref-copy` (**Line Ref Copy**). See [release.md](./release.md) for publishing (GitHub Actions + Trusted Publishing). Document version bumps in `CHANGELOG.md` when cutting releases.
 
 ## Incident response
 

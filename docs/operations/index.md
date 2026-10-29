@@ -7,5 +7,5 @@ Deployment, monitoring, and runbooks.
 | Document | Description |
 |----------|-------------|
 | [overview.md](./overview.md) | CI, local verification |
-| [release.md](./release.md) | Manual-first Marketplace / Open VSX release plan |
+| [release.md](./release.md) | Marketplace release plan (Trusted Publishing) |
 | [security.md](./security.md) | Vulnerability reporting, Dependabot, Action pinning, Scorecard |
