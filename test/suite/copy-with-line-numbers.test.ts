@@ -48,6 +48,37 @@ suite('lineRefCopy', () => {
     )
   })
 
+  test('whole-line selection ending at column 0 excludes the next line', async () => {
+    const editor = await openDocument(fixturePath('single-root', 'sample.txt'))
+    setSelection(editor, 0, 0, 2, 0)
+
+    await runCopyCommand(COMMAND_WITHOUT_PATH, editor)
+
+    assert.strictEqual(await readClipboard(), formatLines([1, 2], ['alpha', 'beta'], 1))
+  })
+
+  test('multiple selections trim each whole-line range', async () => {
+    const editor = await openDocument(fixturePath('single-root', 'sample.txt'))
+    setSelections(editor, [new vscode.Selection(0, 0, 1, 0), new vscode.Selection(2, 0, 2, 5)])
+
+    await runCopyCommand(COMMAND_WITHOUT_PATH, editor)
+
+    assert.strictEqual(
+      await readClipboard(),
+      `${formatLines([1], ['alpha'], 1)}---${EOL}${formatLines([3], ['gamma'], 1)}`,
+    )
+  })
+
+  test('padding width ignores the unselected line after a whole-line selection', async () => {
+    const editor = await openDocument(fixturePath('single-root', 'ten-lines.txt'))
+    setSelection(editor, 0, 0, 9, 0)
+
+    await runCopyCommand(COMMAND_WITHOUT_PATH, editor)
+
+    const lines = Array.from({ length: 9 }, (_, i) => `line${i + 1}`)
+    assert.strictEqual(await readClipboard(), formatLines([1, 2, 3, 4, 5, 6, 7, 8, 9], lines, 1))
+  })
+
   test('withFullPath includes absolute file path header', async () => {
     const filePath = fixturePath('single-root', 'sample.txt')
     const editor = await openDocument(filePath)
