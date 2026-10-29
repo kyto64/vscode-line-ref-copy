@@ -10,7 +10,7 @@ This document describes **publish preparation** for **Line Ref Copy** (`line-ref
 | Display name | Line Ref Copy |
 | Publisher (VS Code Marketplace) | `kyto64` — publisher account exists |
 | Open VSX namespace | **Not** created yet |
-| Version | `0.1.0`, `preview: true` |
+| Version | `0.1.2`, `preview: true` |
 | Icon | `images/icon.svg` (source) → `images/icon.png` (256×256, Marketplace) |
 | LICENSE | MIT — yassh (2017) + kyto64 (2026); credited in README |
 
