@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Copy with Line Number">
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="27.25" fill="#F4F4F6" stroke="#D4D4D8" stroke-width="1.5"/>
+  <g fill="none" stroke="#1C1C24" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 36 L36 92 M36 36 L50 36 M36 92 L50 92"/>
+    <line x1="62" y1="56" x2="94" y2="56"/>
+    <line x1="62" y1="72" x2="94" y2="72"/>
+  </g>
+</svg>
