@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 — 2026-10-29
+
+Fixes an extra line being copied for whole-line selections. Still a preview release.
+
+### Fixed
+
+- Whole-line selections (gutter click/drag, Shift+Down, Cmd/Ctrl+L) no longer copy the unselected next line, and zero-padding width is no longer affected by that extra line number.
+
 ## 0.1.2 — 2026-10-29
 
 Marketplace and extension icon replaced with the new design (`]=` mark). No behavior changes. Still a preview release.
