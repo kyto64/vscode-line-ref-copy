@@ -28,7 +28,8 @@ When a path mode is used, the clipboard text starts with `File: <path>` followed
 ## Line format
 
 - Each selected line becomes `<padded-line-number>: <line text>`.
-- Padding width uses the line number of the **last selection’s end line** (selections sorted by `start.line`), not the global max across all ranges. Overlapping multi-cursors can therefore use a narrower width than the longest range alone would need.
+- Padding width uses the line number of the **last selection’s effective end line** (selections sorted by `start.line`), not the global max across all ranges. Overlapping multi-cursors can therefore use a narrower width than the longest range alone would need.
+- The effective end line is `end.line`, except for a non-empty multi-line selection ending at column 0 (e.g. whole-line selection via the gutter, Shift+↓ or Cmd/Ctrl+L), where the unselected next line is excluded (`end.line - 1`), matching VS Code's built-in copy.
 - Pad character is ASCII `0` via `padStart` (e.g. `008: `).
 - Multiple selections are separated by a line containing `---`.
 

@@ -16,6 +16,12 @@ const OPTION_WITH_FILE_NAME = 'withFileName'
 
 const MULTI_SELECTION_SEPARATOR = '---'
 
+// A full-line selection ends at column 0 of the next line; that line is not actually selected.
+function effectiveEndLine(selection: vscode.Selection): number {
+  const { start, end } = selection
+  return !selection.isEmpty && end.line > start.line && end.character === 0 ? end.line - 1 : end.line
+}
+
 async function copyLineRef(option?: string) {
   const editor = vscode.window.activeTextEditor
   if (!editor) {
@@ -50,13 +56,13 @@ async function copyLineRef(option?: string) {
 
   const selections = [...editor.selections].sort((a, b) => a.start.line - b.start.line)
   const lastSelection = selections[selections.length - 1]
-  const largestLineNumber = lastSelection.end.line + 1
+  const largestLineNumber = effectiveEndLine(lastSelection) + 1
   const largestLineNumberLength = largestLineNumber.toString().length
 
   selections.forEach((selection, i) => {
     if (i > 0) str += `${MULTI_SELECTION_SEPARATOR}${EOL}`
 
-    for (let n = selection.start.line; n <= selection.end.line; n += 1) {
+    for (let n = selection.start.line; n <= effectiveEndLine(selection); n += 1) {
       const number = String(n + 1).padStart(largestLineNumberLength, '0')
       const line = document.lineAt(n).text
 
