@@ -1,6 +1,6 @@
-# Release plan (manual-first)
+# Release plan
 
-This document describes **publish preparation** for **Line Ref Copy** (`line-ref-copy`, publisher `kyto64`). It does **not** automate publishing; kyto must approve every public release.
+This document describes **publish preparation** for **Line Ref Copy** (`line-ref-copy`, publisher `kyto64`). 公開は Trusted Publishing で自動化されているが、すべての公開は `release` 環境での kyto の承認を必須とする。
 
 ## Current state (2026-10-14)
 
@@ -25,23 +25,44 @@ npm run vsce:package         # produces line-ref-copy-0.1.0.vsix
 
 `.vscodeignore` trims dev-only paths (tests, docs, rulesync, CI configs). Do not commit `.vsix` artifacts.
 
-Open VSX (`ovsx`) packaging may be added later when a namespace exists; not required for Marketplace-only preview.
+Open VSX (`ovsx`) は未対応（namespace 作成後に検討）。
 
-## Marketplace authentication
+## Marketplace 認証（Trusted Publishing）
 
-- Publishing uses a **Personal Access Token** with Marketplace publish scope.
-- Microsoft has announced retirement of long-lived Marketplace PATs on **2026-12-01**; plan to migrate to the supported auth flow before that date.
-- **Never** commit tokens or store them in the repository.
+- 公開は GitHub Actions（`.github/workflows/publish.yml`）から **Trusted Publishing（OIDC）** で行う。PAT（Personal Access Token）は **もう使わない**。リポジトリにシークレットは保存しない。
+- `@vscode/vsce` の `publish --oidc` を使う（4.1.0 以上が必要。`package.json` の devDependencies で固定）。
+- 参照: [Publishing Extensions — Secure automated publishing](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
 
-## Planned automation (not implemented)
+## 自動公開（publish.yml）
 
-A future GitHub Actions workflow may:
+- トリガー: タグ `v*` の push、または `workflow_dispatch`（必須入力 `tag`）。どちらも `refs/tags/<tag>` を checkout し、ブランチ HEAD からは公開しない（タグが存在しなければ失敗）。
+- job は `environment: release` を使うため、kyto64 の承認が済むまで開始されない。
+- 手順: lint → `xvfb-run -a npm test` → compile → ガード → `vsce publish --oidc`。
+- 公開前ガード:
+  - `package.json` の `version` とタグ名（先頭 `v` を除く）が一致しなければ失敗。
+  - Marketplace に同じ version が既にあれば失敗（既存タグの再公開を防ぐ。`vsce publish` 自体も同 version では失敗する）。
+- 同時公開は `concurrency`（`cancel-in-progress: false`）で防ぐ。
 
-1. Run only on manual dispatch or on a tagged release, after kyto approval.
-2. Use a GitHub **environment** named `release` with **kyto64 as a required reviewer** before secrets are exposed.
-3. Build with `npm ci`, `npm run compile`, `npm test`, then `vsce publish` (and optionally `ovsx publish`).
+## 初回セットアップ（kyto が手動で実施）
 
-**This repository intentionally has no publish workflow yet** (see Issue #6). Until automation lands, releases are manual: bump version, update `CHANGELOG.md`, `vsce package`, publish from a trusted machine, then push the tag.
+1. **Marketplace の Trusted Publisher ポリシー登録**: [publisher 管理画面](https://marketplace.visualstudio.com/manage) で publisher `kyto64` → Trusted Publishing → Create:
+   - Repository owner: `kyto64`
+   - Repository: `vscode-line-ref-copy`
+   - Workflow: `publish.yml`
+   - Environment: `release`
+2. **GitHub environment の作成**: リポジトリの Settings → Environments で `release` を作成し、Required reviewers に `kyto64` を設定する。
+
+## リリース手順
+
+1. version bump と `CHANGELOG.md` 更新の PR をマージする。
+2. kyto がタグ `vX.Y.Z` を作成して push する（または Actions から `Publish` を `workflow_dispatch` し、`tag` に既存タグを入力）。
+3. `release` 環境で kyto が承認する。
+4. `publish.yml` が Marketplace へ公開する。
+5. GitHub Release を `CHANGELOG.md` の内容で作成する。
+
+## フォールバック（手動 VSIX アップロード）
+
+Trusted Publishing が使えない場合は、従来どおり手動でアップロードする: `npm run vsce:package` で VSIX を作成し、Marketplace 管理画面からアップロードする。
 
 ## Pre-publish checklist
 
