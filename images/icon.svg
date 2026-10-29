@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Line Ref Copy">
-  <rect width="256" height="256" rx="56" fill="#000000"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 72 72 L 72 184 M 72 72 L 100 72 M 72 184 L 100 184"/>
-    <line x1="124" y1="112" x2="188" y2="112"/>
-    <line x1="124" y1="144" x2="188" y2="144"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Copy with Line Number">
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="27.25" fill="#1C1C24" stroke="#3A3A42" stroke-width="1.5"/>
+  <g fill="none" stroke="#E6EDF3" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 36 L36 92 M36 36 L50 36 M36 92 L50 92"/>
+    <line x1="62" y1="56" x2="94" y2="56"/>
+    <line x1="62" y1="72" x2="94" y2="72"/>
   </g>
 </svg>

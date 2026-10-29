@@ -48,7 +48,7 @@ npm run vsce:package   # build .vsix (requires compile)
 
 ## Icon
 
-Source artwork: `images/icon.svg` (monochrome **Line Ref Copy** mark). Marketplace asset: `images/icon.png` (256×256). To re-render after editing the SVG: `npx -p sharp node -e "require('sharp')('images/icon.svg').resize(256,256).png().toFile('images/icon.png')"`
+Source artwork: `images/icon.svg` (copy of `images/bg-dark.svg`; variants: `bg-light`, `transparent-dark`, `transparent-light`, each with 128/256 PNG renders). Marketplace asset: `images/icon.png` (256×256). To re-render after editing the SVG: `npx -p sharp node -e "require('sharp')('images/icon.svg').resize(256,256).png().toFile('images/icon.png')"`
 
 ## License
 
