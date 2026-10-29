@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 — 2026-10-29
+
+Marketplace and extension icon replaced with the new design (`]=` mark). No behavior changes. Still a preview release.
+
+### Changed
+
+- Updated the Marketplace / extension icon to the new design.
+
 ## 0.1.1 — 2026-10-15
 
 Documentation and development tooling update; no extension behavior changes. Still a preview release.
