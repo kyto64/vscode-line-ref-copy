@@ -1,6 +1,6 @@
 import * as path from 'path'
 import Mocha from 'mocha'
-import { globSync } from 'glob'
+import { globSync } from 'node:fs'
 
 export async function run(): Promise<void> {
   const mocha = new Mocha({ ui: 'tdd', color: true, timeout: 30_000 })
