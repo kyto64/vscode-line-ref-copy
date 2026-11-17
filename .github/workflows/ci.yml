@@ -40,6 +40,45 @@ jobs:
       - name: Test
         run: xvfb-run -a npm test
 
+  comment-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SHFMT_VERSION: v3.14.1
+      SHFMT_SHA256: 76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js 24 (Active LTS)
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install comment-check
+        run: npm ci --prefix .github/comment-check --ignore-scripts
+
+      - name: Install shfmt
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/shfmt" "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64"
+          echo "${SHFMT_SHA256}  $RUNNER_TEMP/shfmt" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/shfmt"
+          echo "COMMENT_CHECK_SHFMT=$RUNNER_TEMP/shfmt" >> "$GITHUB_ENV"
+
+      - name: Test comment-check
+        run: npm test --prefix .github/comment-check
+
+      - name: Check added or changed comments
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/comment-check/src/cli.mjs --base "$BASE_SHA" --head HEAD
+
   verify-lockfile:
     runs-on: ubuntu-latest
     permissions:

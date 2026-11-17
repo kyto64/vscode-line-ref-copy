@@ -18,7 +18,8 @@ globs:
 
 - `README.md` and `docs/`: English (see [docs/development/language-policy.md](./docs/development/language-policy.md)).
 - GitHub Issues and PR titles/bodies: Japanese.
-- Code comments and identifiers: English.
+- Identifiers: English.
+- Code comments: do not add them by default (see `.claude/rules/code-quality.md`); when an allowed exception comment is needed (license notice, public API doc, `INVARIANT:` / `SECURITY:` / `EXTERNAL:` constraint, tool directive), write it in English.
 
 ## TypeScript / VS Code extension
 

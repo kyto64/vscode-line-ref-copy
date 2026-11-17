@@ -23,9 +23,10 @@ npm run lint
 npm run compile
 xvfb-run -a npm test   # Linux headless; elsewhere `npm test`
 npm run rules:generate # after .rulesync/ edits; must leave no diff
+node .github/comment-check/src/cli.mjs --base origin/master # after npm ci --prefix .github/comment-check
 ```
 
-CI required checks: `build` (`.github/workflows/ci.yml`) and `check-rulesync` (`.github/workflows/check_rulesync.yaml`).
+CI required checks: `build` and `comment-check` (`.github/workflows/ci.yml`), and `check-rulesync` (`.github/workflows/check_rulesync.yaml`).
 
 ## Tech stack
 
@@ -67,12 +68,12 @@ Skills live under `.rulesync/skills/` (SSOT). This repo’s `rulesync.jsonc` gen
 
 ## AI settings changes
 
-Edit `.rulesync/` only, then `npm run rules:generate`. Commit `.rulesync/`, `rulesync.jsonc`, **`AGENTS.md`**, and **`.agents/skills/`** (see `docs/development/rulesync.md`). Keep `AGENTS.md` under 16 KiB.
+Edit `.rulesync/` only, then `npm run rules:generate`. Commit `.rulesync/`, `rulesync.jsonc`, **`AGENTS.md`**, **`.agents/skills/`**, **`CLAUDE.md`**, and **`.claude/`** (see `docs/development/rulesync.md`). Keep `AGENTS.md` under 16 KiB.
 
 ## Language
 
 - `README.md` and `docs/`: English
 - GitHub Issues and PRs: Japanese
-- Code comments: English
+- Code comments: do not add them by default (see the development quality policy below and `.claude/rules/code-quality.md`); when an allowed exception comment is needed, write it in English
 
 See [docs/development/language-policy.md](./docs/development/language-policy.md).
