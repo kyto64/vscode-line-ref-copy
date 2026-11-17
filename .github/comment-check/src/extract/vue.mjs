@@ -38,7 +38,7 @@ export function extractVueComments(text) {
   const blockRanges = [descriptor.template, descriptor.script, descriptor.scriptSetup, ...descriptor.styles]
     .filter(Boolean).map((b) => [b.loc.start.offset, b.loc.end.offset]);
   for (const node of parseFragment(text, { sourceCodeLocationInfo: true }).childNodes) {
-    if (node.nodeName !== '#comment') continue;
+    if (node.nodeName !== '#comment' || !node.sourceCodeLocation) continue;
     const { startOffset, endOffset } = node.sourceCodeLocation;
     if (blockRanges.some(([s, e]) => startOffset >= s && startOffset < e)) continue;
     comments.push({ start: startOffset, end: endOffset, text: text.slice(startOffset, endOffset), kind: 'comment', apiDoc: false });

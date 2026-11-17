@@ -7,7 +7,7 @@ function collect(node, out) {
   }
   if (!node || typeof node !== 'object') return;
   for (const c of node.Comments ?? []) {
-    out.push({ startLine: c.Pos.Line, endLine: c.End.Line, text: `#${c.Text}`, kind: 'comment', apiDoc: false });
+    out.push({ startLine: c.Pos.Line, endLine: c.End?.Line ?? c.Pos.Line, text: `#${c.Text}`, kind: 'comment', apiDoc: false });
   }
   for (const value of Object.values(node)) if (value && typeof value === 'object') collect(value, out);
 }

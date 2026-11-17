@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
-import { checkDiff, measureDensity, loadConfig } from './check.mjs';
+import { checkDiff, measureDensity } from './check.mjs';
 import { git } from './git.mjs';
 
 const { values } = parseArgs({
@@ -39,6 +39,7 @@ function summaryMarkdown(result) {
   if (result.unsupported.length) parts.push('### 検査できなかったファイル（パーサ未対応）', ...result.unsupported.map((u) => `- \`${u.path}\`${u.language ? `（${u.language}）` : ''}`));
   if (result.unchecked.length) parts.push('### 検査していない設定ファイル等（失敗にはしない）', ...result.unchecked.map((u) => `- \`${u.path}\``));
   if (result.errors.length) parts.push('### 解析エラー', ...result.errors.map((e) => `- \`${e.path}\`: ${e.message}`));
+  if (result.configChanged) parts.push('### 設定の変更', 'この PR は `.comment-check.json` を変えている。検査は基準側の設定で行った（変更はマージ後に効く）。');
   return parts.join('\n\n') + '\n';
 }
 
@@ -58,8 +59,8 @@ function runCheck() {
     process.stderr.write('usage: comment-check [--base <ref>] [--head <ref>] [--json] | --density\n--base を省くと origin/HEAD を使う。origin/HEAD がなければ git remote set-head origin --auto で設定するか、--base を指定する\n');
     return 2;
   }
-  const config = loadConfig(values.cwd);
-  const result = checkDiff({ cwd: values.cwd, base, head: values.head, config });
+  const result = checkDiff({ cwd: values.cwd, base, head: values.head });
+  const { config } = result;
   if (values.json) {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   } else {
@@ -70,12 +71,22 @@ function runCheck() {
     for (const e of result.errors) process.stdout.write(`${e.path}: [parse-error] ${e.message}\n`);
     process.stdout.write(`comment-check: ${result.ok ? 'OK' : 'NG'} (違反 ${result.violations.length} / 許可した例外 ${result.allowed.length} / 未対応 ${result.unsupported.length} / 解析エラー ${result.errors.length})\n`);
   }
+  if (!values.json && result.configChanged) process.stdout.write('comment-check: この PR は .comment-check.json を変えている。検査は基準側の設定で行った（変更はマージ後に効く）\n');
   if (process.env.GITHUB_ACTIONS === 'true') {
-    for (const v of result.violations) process.stdout.write(`::error file=${escapeAnnotationProperty(v.path)},line=${v.line},endLine=${v.endLine},title=${escapeAnnotationProperty(`comment-check ${v.category}`)}::${escapeAnnotation(v.message)}\n`);
-    for (const u of result.unsupported) process.stdout.write(`::${config.unsupported === 'fail' ? 'error' : 'warning'} file=${escapeAnnotationProperty(u.path)},title=comment-check unsupported::コメント検査に未対応の言語\n`);
+    const annotate = (level, props, message) => process.stderr.write(`::${level} ${Object.entries(props).map(([k, v]) => `${k}=${escapeAnnotationProperty(v)}`).join(',')}::${escapeAnnotation(message)}\n`);
+    for (const v of result.violations) annotate('error', { file: v.path, line: v.line, endLine: v.endLine, title: `comment-check ${v.category}` }, v.message);
+    for (const u of result.unsupported) annotate(config.unsupported === 'fail' ? 'error' : 'warning', { file: u.path, title: 'comment-check unsupported' }, 'コメント検査に未対応の言語');
+    for (const e of result.errors) annotate('error', { file: e.path, title: 'comment-check parse-error' }, e.message);
+    if (result.configChanged) annotate('warning', { file: '.comment-check.json', title: 'comment-check config' }, 'この PR は .comment-check.json を変えている。検査は基準側の設定で行った（変更はマージ後に効く）');
   }
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summaryMarkdown(result));
   return result.ok ? 0 : 1;
 }
 
-process.exitCode = values.density ? runDensity() : runCheck();
+try {
+  process.exitCode = values.density ? runDensity() : runCheck();
+} catch (error) {
+  process.stderr.write(`comment-check: 実行に失敗した: ${error?.stack ?? error}\n`);
+  if (process.env.GITHUB_ACTIONS === 'true') process.stderr.write(`::error title=comment-check crashed::${escapeAnnotation(String(error?.message ?? error))}\n`);
+  process.exitCode = 2;
+}

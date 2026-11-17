@@ -12,7 +12,10 @@ DEFS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 def is_string_statement(stmt):
     return isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str)
 def record(stmt, kind, public):
-    out.append({"startLine": stmt.lineno, "endLine": stmt.end_lineno, "text": ast.get_source_segment(source, stmt), "kind": kind, "apiDoc": public})
+    text = ast.get_source_segment(source, stmt)
+    if text is None:
+        raise SyntaxError(f"cannot locate string statement at line {stmt.lineno}")
+    out.append({"startLine": stmt.lineno, "endLine": stmt.end_lineno, "text": text, "kind": kind, "apiDoc": public})
 def visit_body(owner, body, scope_public, owner_public):
     for index, stmt in enumerate(body):
         if is_string_statement(stmt):

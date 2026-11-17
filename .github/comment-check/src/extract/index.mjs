@@ -28,8 +28,25 @@ const UNSUPPORTED_CODE = new Set(['.kt', '.kts', '.cs', '.java', '.ps1', '.go', 
 
 const UNCHECKED_CONFIG = new Set(['.toml', '.ini', '.cfg', '.conf', '.properties', '.xml', '.plist', '.env', '.example', '.npmrc', '.editorconfig']);
 
-export function classifyFile(file) {
-  const ext = path.extname(file).toLowerCase();
+const SHEBANG_LANGUAGES = [
+  [/^#!\S*\b(?:env(?:\s+-\S+)*\s+)?(?:ba|da|k)?sh\b/, '.sh'],
+  [/^#!\S*\b(?:env(?:\s+-\S+)*\s+)?python[\d.]*\b/, '.py'],
+  [/^#!\S*\b(?:env(?:\s+-\S+)*\s+)?node\b/, '.js'],
+];
+
+function shebangExtension(text) {
+  const firstLine = (text ?? '').split('\n', 1)[0];
+  if (!firstLine.startsWith('#!')) return null;
+  return SHEBANG_LANGUAGES.find(([pattern]) => pattern.test(firstLine))?.[1] ?? 'unsupported';
+}
+
+export function classifyFile(file, text) {
+  let ext = path.extname(file).toLowerCase();
+  if (ext === '' && text !== undefined) {
+    const fromShebang = shebangExtension(text);
+    if (fromShebang === 'unsupported') return { status: 'unsupported' };
+    if (fromShebang) ext = fromShebang;
+  }
   if (EXTRACTORS.has(ext)) return { status: 'supported', extract: EXTRACTORS.get(ext) };
   if (UNSUPPORTED_CODE.has(ext)) return { status: 'unsupported' };
   if (UNCHECKED_CONFIG.has(ext)) return { status: 'unchecked-config' };

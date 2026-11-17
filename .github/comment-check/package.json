@@ -1,6 +1,6 @@
 {
   "name": "comment-check",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "PR で追加・変更されたコメントだけを言語別パーサで検査する（試作）",
   "scripts": {
     "test": "node --test test/*.test.mjs"
