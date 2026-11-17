@@ -91,6 +91,7 @@ export function extractFileComments(file, text) {
 
 export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }) {
   const result = { violations: [], allowed: [], unsupported: [], unchecked: [], notApplicable: [], skipped: [], errors: [] };
+  const baseline = git(cwd, ['merge-base', base, head], { allowFailure: true })?.trim() || base;
   for (const file of changedFiles(cwd, base, head)) {
     if (matchesAny(file.path, config.exclude)) { result.skipped.push({ path: file.path, reason: 'exclude' }); continue; }
     if (matchesAny(file.path, config.generated)) { result.skipped.push({ path: file.path, reason: 'generated' }); continue; }
@@ -105,7 +106,7 @@ export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }
     let baseComments = [];
     try {
       headComments = extractFileComments(file.path, headText).comments;
-      const baseText = file.status === 'A' ? null : fileAt(cwd, base, file.oldPath);
+      const baseText = file.status === 'A' ? null : fileAt(cwd, baseline, file.oldPath);
       if (baseText !== null) baseComments = extractFileComments(file.oldPath, baseText).comments;
     } catch (error) {
       result.errors.push({ path: file.path, message: String(error.message ?? error) });

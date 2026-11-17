@@ -258,3 +258,48 @@ test('JSON/JSONC: tsconfig などのコメントを取り、文字列内の // �
   assert.deepEqual(categories(r.violations), ['tsconfig.json:2:explanation']);
   assert.ok(r.skipped.some((s) => s.path === 'package-lock.json'));
 });
+
+test('master だけが先にコメントを消しても、機能ブランチ側の既存コメントは新規違反にならない', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'comment-check-'));
+  tempDirs.push(dir);
+  const run = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'pipe' });
+  const commit = (content, message) => {
+    fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'src/a.ts'), content);
+    run('add', '-A');
+    run('commit', '-q', '-m', message);
+  };
+  run('init', '-q', '-b', 'main');
+  run('config', 'user.email', 't@example.com');
+  run('config', 'user.name', 't');
+  commit('let i = 0;\ni++; // increment the counter\n', 'base');
+  run('switch', '-q', '-c', 'feature');
+  commit('let i = 0;\ni += 1; // increment the counter\n', 'feature edits the line');
+  run('switch', '-q', 'main');
+  commit('let i = 0;\ni++;\n', 'main removes the comment');
+  const r = checkDiff({ cwd: dir, base: 'main', head: 'feature', config: { ...DEFAULT_CONFIG } });
+  assert.deepEqual(categories(r.violations), []);
+  assert.equal(r.ok, true);
+});
+
+test('CLI: サマリ表のセルではバックスラッシュと縦線をエスケープする', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'comment-check-'));
+  tempDirs.push(dir);
+  const run = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'pipe' });
+  run('init', '-q', '-b', 'main');
+  run('config', 'user.email', 't@example.com');
+  run('config', 'user.name', 't');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# t\n');
+  run('add', '-A');
+  run('commit', '-q', '-m', 'base');
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'src/a.ts'), 'let i = 0;\n// TODO: a\\|b and c\\\n');
+  run('add', '-A');
+  run('commit', '-q', '-m', 'head');
+  const summary = path.join(dir, 'summary.md');
+  const cli = new URL('../src/cli.mjs', import.meta.url).pathname;
+  try {
+    execFileSync('node', [cli, '--base', 'HEAD~1', '--cwd', dir], { env: { ...process.env, GITHUB_STEP_SUMMARY: summary }, stdio: 'pipe' });
+  } catch {}
+  assert.match(fs.readFileSync(summary, 'utf8'), /a\\\\\\\|b and c\\\\ \|/);
+});

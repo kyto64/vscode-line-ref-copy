@@ -13,7 +13,7 @@ const ACTION_PIN_LINE = /\buses:\s*\S+@[0-9a-f]{40}\b/;
 
 export function commentBody(text) {
   let body = text.trim();
-  if (body.startsWith('<!--')) body = body.slice(4).replace(/-->$/, '');
+  if (body.startsWith('<!--')) body = body.slice(4).replace(/--!?>$/, '');
   else if (body.startsWith('/*')) body = body.replace(/^\/\*+!?/, '').replace(/\*+\/$/, '').split('\n').map((l) => l.replace(/^\s*\*\s?/, '')).join('\n');
   else if (body.startsWith('//')) body = body.split('\n').map((l) => l.replace(/^\s*\/\/+!?\s?/, '')).join('\n');
   else if (body.startsWith('#')) body = body.split('\n').map((l) => l.replace(/^\s*#+\s?/, '')).join('\n');

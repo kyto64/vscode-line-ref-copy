@@ -23,7 +23,7 @@ function excerpt(text) {
 }
 
 function summaryMarkdown(result) {
-  const rows = (items) => items.map((v) => `| \`${v.path}:${v.line}\` | ${v.category} | ${excerpt(v.text).replace(/\|/g, '\\|')} |`).join('\n');
+  const rows = (items) => items.map((v) => `| \`${v.path}:${v.line}\` | ${v.category} | ${excerpt(v.text).replace(/\\/g, '\\\\').replace(/\|/g, '\\|')} |`).join('\n');
   const parts = [`## コメント検査: ${result.ok ? '合格' : '不合格'}`];
   if (result.violations.length) parts.push('### 違反', '| 場所 | 種類 | コメント |', '|---|---|---|', rows(result.violations));
   if (result.allowed.length) parts.push('### 許可した例外（レビュー対象）', '| 場所 | 種類 | コメント |', '|---|---|---|', rows(result.allowed));
