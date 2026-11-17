@@ -1,0 +1,23 @@
+{
+  "name": "comment-check",
+  "version": "0.1.0",
+  "description": "PR で追加・変更されたコメントだけを言語別パーサで検査する（試作）",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "UNLICENSED",
+  "type": "module",
+  "dependencies": {
+    "parse5": "8.1.1",
+    "yaml": "2.9.1",
+    "@vue/compiler-sfc": "3.5.45",
+    "typescript": "5.9.3"
+  },
+  "private": true,
+  "bin": {
+    "comment-check": "src/cli.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
