@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { classifyFile } from './extract/index.mjs';
-import { classifyComment, commentBody } from './rules.mjs';
+import { classifyComment, commentBody, GENERATED, inheritsFromHead, LICENSE_TEXT, VIOLATIONS_NEVER_INHERITED } from './rules.mjs';
+import { UnsupportedLanguageError } from './extract/unsupported.mjs';
 import { addedLines, changedFiles, fileAt, git } from './git.mjs';
 import { matchesAny } from './glob.mjs';
 
@@ -68,17 +69,44 @@ export function groupLineComments(comments) {
       groups.push({ members: [c] });
     }
   }
-  return groups.flatMap((group, id) => {
-    const head = group.members[0];
-    const block = { ...head, endLine: group.members.at(-1).endLine, text: group.members.map((m) => m.text).join('\n') };
-    return group.members.map((m) => ({ ...m, groupId: id, block }));
+  return groups.flatMap((group, id) => group.members.map((m) => ({ ...m, groupId: id })));
+}
+
+const PREAMBLE_LINE = /^\s*$|^#!|^\s*<!doctype\b|^\s*<\?xml\b/i;
+
+function codeAfterComment(c, lines) {
+  const endLine = (lines[c.endLine - 1] ?? '').trim();
+  const lastLine = c.text.trim().split('\n').at(-1).trim();
+  if (c.startLine === c.endLine) {
+    const firstLine = c.text.trim().split('\n')[0];
+    return endLine.startsWith(firstLine) ? endLine.slice(firstLine.length).trim() !== '' : true;
+  }
+  return endLine.startsWith(lastLine) ? endLine.slice(lastLine.length).trim() !== '' : true;
+}
+
+export function markHeaderComments(comments, text) {
+  const lines = text.split('\n');
+  let coveredUntil = 0;
+  let inHeader = true;
+  return comments.map((c) => {
+    if (inHeader) {
+      for (let n = coveredUntil + 1; n < c.startLine; n += 1) {
+        if (!PREAMBLE_LINE.test(lines[n - 1] ?? '')) { inHeader = false; break; }
+      }
+      const firstLine = c.text.trim().split('\n')[0];
+      if (inHeader && !(lines[c.startLine - 1] ?? '').trim().startsWith(firstLine)) inHeader = false;
+    }
+    const isHeader = inHeader;
+    if (inHeader) {
+      coveredUntil = Math.max(coveredUntil, c.endLine);
+      if (codeAfterComment(c, lines)) inHeader = false;
+    }
+    return { ...c, isHeader };
   });
 }
 
-const GENERATED_HEADER_LINES = 5;
-
-function hasGeneratedHeader(comments) {
-  return comments.some((c) => c.startLine <= GENERATED_HEADER_LINES && /@generated\b|DO NOT EDIT/i.test(commentBody(c.text)));
+function isGeneratedFile(comments) {
+  return comments.some((c) => c.isHeader && GENERATED.test(commentBody(c.text)));
 }
 
 function normalized(comment) {
@@ -88,7 +116,7 @@ function normalized(comment) {
 export function extractFileComments(file, text) {
   const kind = classifyFile(file);
   if (kind.status !== 'supported') return { status: kind.status, comments: [] };
-  return { status: 'supported', comments: groupLineComments(withLines(kind.extract(text), text)) };
+  return { status: 'supported', comments: groupLineComments(markHeaderComments(withLines(kind.extract(text, file), text), text)) };
 }
 
 export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }) {
@@ -107,24 +135,64 @@ export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }
     let baseComments = [];
     try {
       headComments = extractFileComments(file.path, headText).comments;
-      if (hasGeneratedHeader(headComments)) { result.skipped.push({ path: file.path, reason: 'generated-header' }); continue; }
       const baseText = file.status === 'A' ? null : fileAt(cwd, baseline, file.oldPath);
-      if (baseText !== null) baseComments = extractFileComments(file.oldPath, baseText).comments;
+      if (baseText !== null) {
+        try { baseComments = extractFileComments(file.oldPath, baseText).comments; } catch { baseComments = []; }
+      }
     } catch (error) {
-      result.errors.push({ path: file.path, message: String(error.message ?? error) });
+      if (error instanceof UnsupportedLanguageError) result.unsupported.push({ path: file.path, status: 'unsupported', language: error.language });
+      else result.errors.push({ path: file.path, message: String(error.message ?? error) });
       continue;
     }
+    if (isGeneratedFile(headComments)) { result.skipped.push({ path: file.path, reason: 'generated-header' }); continue; }
     const lines = addedLines(cwd, base, head, file);
     const existing = new Set(baseComments.map(normalized));
-    const reportedGroups = new Set();
-    for (const comment of headComments) {
-      let touched = false;
-      for (let n = comment.startLine; n <= comment.endLine; n += 1) if (lines.has(n)) { touched = true; break; }
-      if (!touched || existing.has(normalized(comment)) || reportedGroups.has(comment.groupId)) continue;
-      reportedGroups.add(comment.groupId);
-      const verdict = classifyComment(comment.block, { lineText: comment.block.lineText, file: file.path });
-      const entry = { path: file.path, line: comment.startLine, endLine: comment.block.endLine, text: comment.block.text, ...verdict };
+    const isNew = (c) => {
+      for (let n = c.startLine; n <= c.endLine; n += 1) if (lines.has(n)) return !existing.has(normalized(c));
+      return false;
+    };
+    const groups = new Map();
+    for (const c of headComments) {
+      if (!groups.has(c.groupId)) groups.set(c.groupId, []);
+      groups.get(c.groupId).push(c);
+    }
+    const report = (c, text, endLine, verdict) => {
+      const entry = { path: file.path, line: c.startLine, endLine, text, ...verdict };
       (verdict.allowed ? result.allowed : result.violations).push(entry);
+    };
+    const classifyMember = (c) => classifyComment(c, { lineText: c.lineText, file: file.path, isHeader: c.isHeader });
+    for (const members of groups.values()) {
+      const added = members.filter(isNew);
+      if (added.length === 0) continue;
+      const head = members[0];
+      if (added.length < members.length) {
+        for (const c of added) report(c, c.text, c.endLine, classifyMember(c));
+        continue;
+      }
+      if (members.length === 1) {
+        report(head, head.text, head.endLine, classifyMember(head));
+        continue;
+      }
+      const verdicts = members.map((c) => [c, classifyMember(c)]);
+      const reportedAlone = ([c, v]) => VIOLATIONS_NEVER_INHERITED.has(v.category)
+        && !(c === head && v.category === 'constraint-without-reason');
+      for (const [c, v] of verdicts.filter(reportedAlone)) report(c, c.text, c.endLine, v);
+      const rest = verdicts.filter((entry) => !reportedAlone(entry)).map(([c]) => c);
+      if (rest.length === 0) continue;
+      const blockText = rest.map((c) => c.text).join('\n');
+      const blockVerdict = classifyComment({ ...rest[0], text: blockText }, { lineText: rest[0].lineText, file: file.path, isHeader: rest[0].isHeader });
+      if (rest.length > 1 && !inheritsFromHead(blockVerdict.category) && blockVerdict.allowed) {
+        for (const c of rest) report(c, c.text, c.endLine, classifyMember(c));
+        continue;
+      }
+      if (blockVerdict.category === 'license') {
+        const lastLicenseLine = rest.findLastIndex((c) => LICENSE_TEXT.test(commentBody(c.text)));
+        const notice = rest.slice(0, lastLicenseLine + 1);
+        report(notice[0], notice.map((c) => c.text).join('\n'), notice.at(-1).endLine, blockVerdict);
+        for (const c of rest.slice(lastLicenseLine + 1)) report(c, c.text, c.endLine, classifyMember(c));
+        continue;
+      }
+      report(rest[0], blockText, rest.at(-1).endLine, blockVerdict);
     }
   }
   result.ok = result.violations.length === 0 && result.errors.length === 0
@@ -135,6 +203,7 @@ export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }
 export function measureDensity({ cwd, config = loadConfig(cwd) }) {
   const stats = new Map();
   const errors = [];
+  const unsupported = [];
   for (const file of git(cwd, ['ls-files', '-z']).split('\0').filter(Boolean)) {
     if (matchesAny(file, config.exclude) || matchesAny(file, config.generated)) continue;
     const kind = classifyFile(file);
@@ -143,8 +212,12 @@ export function measureDensity({ cwd, config = loadConfig(cwd) }) {
     if (!fs.existsSync(full)) continue;
     const text = fs.readFileSync(full, 'utf8');
     let comments;
-    try { comments = extractFileComments(file, text).comments; } catch (error) { errors.push({ path: file, message: String(error.message ?? error) }); continue; }
-    if (hasGeneratedHeader(comments)) continue;
+    try { comments = extractFileComments(file, text).comments; } catch (error) {
+      if (error instanceof UnsupportedLanguageError) unsupported.push({ path: file, language: error.language });
+      else errors.push({ path: file, message: String(error.message ?? error) });
+      continue;
+    }
+    if (isGeneratedFile(comments)) continue;
     const ext = path.extname(file).toLowerCase();
     const s = stats.get(ext) ?? { files: 0, lines: 0, commentLines: 0, comments: 0 };
     s.files += 1;
@@ -155,5 +228,5 @@ export function measureDensity({ cwd, config = loadConfig(cwd) }) {
     s.comments += comments.length;
     stats.set(ext, s);
   }
-  return { stats: Object.fromEntries(stats), errors };
+  return { stats: Object.fromEntries(stats), errors, unsupported };
 }

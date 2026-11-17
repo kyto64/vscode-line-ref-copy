@@ -3,34 +3,40 @@ import { execFileSync } from 'node:child_process';
 const PROGRAM = String.raw`
 import ast, io, json, sys, tokenize
 source = sys.stdin.read()
-lines = source.splitlines(keepends=True)
-starts = [0]
-for line in lines:
-    starts.append(starts[-1] + len(line))
-def offset(row, col):
-    return starts[row - 1] + col if row - 1 < len(lines) else starts[-1]
 out = []
 for tok in tokenize.generate_tokens(io.StringIO(source).readline):
     if tok.type == tokenize.COMMENT:
-        s = offset(*tok.start); e = offset(*tok.end)
         out.append({"startLine": tok.start[0], "endLine": tok.end[0], "text": tok.string, "kind": "comment", "apiDoc": False})
 tree = ast.parse(source)
-def docstring_owner(parent, node, public):
-    body = getattr(node, 'body', None)
-    if not body or not isinstance(body[0], ast.Expr) or not isinstance(getattr(body[0], 'value', None), ast.Constant) or not isinstance(body[0].value.value, str):
+DEFS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+def is_string_statement(stmt):
+    return isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str)
+def record(stmt, kind, public):
+    out.append({"startLine": stmt.lineno, "endLine": stmt.end_lineno, "text": ast.get_source_segment(source, stmt), "kind": kind, "apiDoc": public})
+def visit_body(owner, body, scope_public, owner_public):
+    for index, stmt in enumerate(body):
+        if is_string_statement(stmt):
+            is_docstring = index == 0 and owner is not None
+            record(stmt, "docstring" if is_docstring else "string-comment", is_docstring and owner_public)
+        visit_node(stmt, scope_public)
+def visit_node(node, scope_public):
+    if isinstance(node, DEFS):
+        public = scope_public and not node.name.startswith('_')
+        inner_scope = public if isinstance(node, ast.ClassDef) else False
+        visit_body(node, node.body, inner_scope, public)
+        for field in ('decorator_list',):
+            for child in getattr(node, field, []):
+                visit_node(child, False)
         return
-    d = body[0]
-    s = offset(d.lineno, d.col_offset); e = offset(d.end_lineno, d.end_col_offset)
-    out.append({"startLine": d.lineno, "endLine": d.end_lineno, "text": source[s:e], "kind": "docstring", "apiDoc": public})
-docstring_owner(None, tree, False)
-for node in tree.body:
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-        public = not node.name.startswith('_')
-        docstring_owner(tree, node, public)
-        if isinstance(node, ast.ClassDef):
-            for member in node.body:
-                if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    docstring_owner(node, member, public and not member.name.startswith('_'))
+    for field, value in ast.iter_fields(node):
+        if isinstance(value, list) and value and all(isinstance(v, ast.stmt) for v in value):
+            visit_body(None, value, scope_public, False)
+        elif isinstance(value, list):
+            for v in value:
+                if isinstance(v, ast.AST): visit_node(v, scope_public)
+        elif isinstance(value, ast.AST):
+            visit_node(value, scope_public)
+visit_body(tree, tree.body, True, False)
 json.dump(out, sys.stdout)
 `;
 

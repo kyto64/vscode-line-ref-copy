@@ -1,11 +1,26 @@
 import { parse } from 'parse5';
 import { extractScriptComments } from './script.mjs';
-import { extractCssComments } from './css.mjs';
+import { extractStyleComments } from './css.mjs';
+import { UnsupportedLanguageError } from './unsupported.mjs';
 
-const SCRIPT_TYPES = new Set(['', 'module', 'text/javascript', 'application/javascript']);
+const JS_TYPES = new Set(['', 'module', 'text/javascript', 'application/javascript', 'text/ecmascript', 'application/ecmascript']);
+const JSON_TYPES = new Set(['application/json', 'application/ld+json', 'importmap', 'speculationrules']);
+const CSS_TYPES = new Set(['', 'text/css']);
 
 function attr(node, name) {
-  return node.attrs?.find((a) => a.name === name)?.value;
+  return (node.attrs?.find((a) => a.name === name)?.value ?? '').trim().toLowerCase();
+}
+
+function embedded(node, body, offset) {
+  if (node.nodeName === 'style') {
+    const type = attr(node, 'type');
+    if (!CSS_TYPES.has(type)) throw new UnsupportedLanguageError(`<style type="${type}">`);
+    return extractStyleComments(body, 'css', offset);
+  }
+  const type = attr(node, 'type');
+  if (JS_TYPES.has(type)) return extractScriptComments(body, '.js', offset);
+  if (JSON_TYPES.has(type)) return extractScriptComments(body, '.json', offset);
+  throw new UnsupportedLanguageError(`<script type="${type}">`);
 }
 
 export function extractHtmlComments(text, baseOffset = 0) {
@@ -21,8 +36,7 @@ export function extractHtmlComments(text, baseOffset = 0) {
       if (inner?.nodeName === '#text' && inner.sourceCodeLocation) {
         const offset = inner.sourceCodeLocation.startOffset;
         const body = text.slice(offset, inner.sourceCodeLocation.endOffset);
-        if (node.nodeName === 'style') comments.push(...extractCssComments(body, offset + baseOffset));
-        else if (SCRIPT_TYPES.has((attr(node, 'type') ?? '').toLowerCase())) comments.push(...extractScriptComments(body, '.js', offset + baseOffset));
+        comments.push(...embedded(node, body, offset + baseOffset));
       }
     }
     for (const child of node.childNodes ?? []) visit(child);

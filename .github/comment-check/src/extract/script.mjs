@@ -18,29 +18,40 @@ function isExported(node) {
   return Boolean(modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword));
 }
 
+function isNonPublicMember(node) {
+  if (!ts.isClassElement(node)) return false;
+  if (node.name && ts.isPrivateIdentifier(node.name)) return true;
+  const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
+  return Boolean(modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword));
+}
+
 function locallyExportedNames(sourceFile) {
   const names = new Set();
-  for (const node of sourceFile.statements) {
-    if (ts.isExportDeclaration(node) && !node.moduleSpecifier && node.exportClause && ts.isNamedExports(node.exportClause)) {
-      for (const element of node.exportClause.elements) names.add((element.propertyName ?? element.name).text);
-    } else if (ts.isExportAssignment(node) && ts.isIdentifier(node.expression)) {
-      names.add(node.expression.text);
+  for (const statement of sourceFile.statements) {
+    if (ts.isExportDeclaration(statement) && !statement.moduleSpecifier && statement.exportClause && ts.isNamedExports(statement.exportClause)) {
+      for (const specifier of statement.exportClause.elements) names.add((specifier.propertyName ?? specifier.name).text);
     }
+    if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) names.add(statement.expression.text);
   }
   return names;
 }
 
 function declaredNames(node) {
-  if (ts.isVariableStatement(node)) return node.declarationList.declarations.map((d) => d.name).filter(ts.isIdentifier).map((n) => n.text);
+  if (ts.isVariableStatement(node)) {
+    return node.declarationList.declarations.map((d) => d.name).filter(ts.isIdentifier).map((name) => name.text);
+  }
   return node.name && ts.isIdentifier(node.name) ? [node.name.text] : [];
 }
 
 function exportedDeclarationStarts(sourceFile) {
   const starts = new Set();
-  const listed = locallyExportedNames(sourceFile);
+  const exportedLater = locallyExportedNames(sourceFile);
+  const isExportedLater = (node) => node.parent === sourceFile
+    && (ts.isDeclarationStatement?.(node) || ts.isVariableStatement(node))
+    && declaredNames(node).some((name) => exportedLater.has(name));
   const visit = (node, exportedParent) => {
-    const listedLocally = node.parent === sourceFile && declaredNames(node).some((name) => listed.has(name));
-    const exported = exportedParent || isExported(node) || ts.isExportAssignment(node) || listedLocally;
+    if (isNonPublicMember(node)) return;
+    const exported = exportedParent || isExported(node) || ts.isExportAssignment(node) || isExportedLater(node);
     if (exported && (ts.isDeclarationStatement?.(node) || ts.isVariableStatement(node) || ts.isClassElement(node)
       || ts.isTypeElement(node) || ts.isEnumMember(node) || ts.isExportAssignment(node))) {
       starts.add(node.getStart(sourceFile));
@@ -52,11 +63,11 @@ function exportedDeclarationStarts(sourceFile) {
   return starts;
 }
 
-export function extractScriptComments(text, ext, baseOffset = 0) {
+export function extractScriptComments(text, ext, baseOffset = 0, fileName = `embedded${ext}`) {
   const kind = scriptKindFor(ext);
   const sourceFile = kind === ts.ScriptKind.JSON
-    ? ts.parseJsonText('x.json', text)
-    : ts.createSourceFile('x' + ext, text, ts.ScriptTarget.Latest, true, kind);
+    ? ts.parseJsonText(fileName, text)
+    : ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, kind);
   const syntaxErrors = sourceFile.parseDiagnostics ?? [];
   if (syntaxErrors.length > 0) {
     throw new Error(`syntax error: ${ts.flattenDiagnosticMessageText(syntaxErrors[0].messageText, ' ')}`);
