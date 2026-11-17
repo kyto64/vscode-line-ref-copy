@@ -10,7 +10,7 @@ Single Source of Truth (SSOT) boundaries for **Line Ref Copy** (`line-ref-copy`,
 | Architecture | `docs/architecture/` | Extension activation, modules, VS Code APIs |
 | Operations | `docs/operations/` | CI, release, marketplace |
 | Development process | `docs/development/` | Workflow, rulesync, ticket-driven setup |
-| AI tool settings (SSOT) | `.rulesync/`, `rulesync.jsonc` | **Devin-only** generate (`agentsmd` rules + `agentsskills` skills); committed: `AGENTS.md`, `.agents/skills/` (not aidd-template-lean multi-tool) |
+| AI tool settings (SSOT) | `.rulesync/`, `rulesync.jsonc` | Devin + Claude Code generate (`agentsmd` rules, `agentsskills` skills, `claudecode` rules + skills); committed: `AGENTS.md`, `.agents/skills/`, `CLAUDE.md`, `.claude/skills/` (not aidd-template-lean multi-tool) |
 | Application code | `src/`, `test/` | Implementation and tests; `package.json` for manifest |
 | Quick start / install blurb | `README.md` | Short user-facing intro (not full spec) |
 
