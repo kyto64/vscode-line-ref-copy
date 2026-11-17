@@ -75,8 +75,10 @@ export function groupLineComments(comments) {
   });
 }
 
-function looksGenerated(text) {
-  return /@generated\b|DO NOT EDIT/i.test(text.split('\n').slice(0, 5).join('\n'));
+const GENERATED_HEADER_LINES = 5;
+
+function hasGeneratedHeader(comments) {
+  return comments.some((c) => c.startLine <= GENERATED_HEADER_LINES && /@generated\b|DO NOT EDIT/i.test(commentBody(c.text)));
 }
 
 function normalized(comment) {
@@ -101,11 +103,11 @@ export function checkDiff({ cwd, base, head = 'HEAD', config = loadConfig(cwd) }
     if (kind.status === 'not-applicable') { result.notApplicable.push(file.path); continue; }
     const headText = fileAt(cwd, head, file.path);
     if (headText === null) continue;
-    if (looksGenerated(headText)) { result.skipped.push({ path: file.path, reason: 'generated-header' }); continue; }
     let headComments;
     let baseComments = [];
     try {
       headComments = extractFileComments(file.path, headText).comments;
+      if (hasGeneratedHeader(headComments)) { result.skipped.push({ path: file.path, reason: 'generated-header' }); continue; }
       const baseText = file.status === 'A' ? null : fileAt(cwd, baseline, file.oldPath);
       if (baseText !== null) baseComments = extractFileComments(file.oldPath, baseText).comments;
     } catch (error) {
@@ -140,9 +142,9 @@ export function measureDensity({ cwd, config = loadConfig(cwd) }) {
     const full = path.join(cwd, file);
     if (!fs.existsSync(full)) continue;
     const text = fs.readFileSync(full, 'utf8');
-    if (looksGenerated(text)) continue;
     let comments;
     try { comments = extractFileComments(file, text).comments; } catch (error) { errors.push({ path: file, message: String(error.message ?? error) }); continue; }
+    if (hasGeneratedHeader(comments)) continue;
     const ext = path.extname(file).toLowerCase();
     const s = stats.get(ext) ?? { files: 0, lines: 0, commentLines: 0, comments: 0 };
     s.files += 1;

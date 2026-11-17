@@ -303,3 +303,29 @@ test('CLI: サマリ表のセルではバックスラッシュと縦線をエス
   } catch {}
   assert.match(fs.readFileSync(summary, 'utf8'), /a\\\\\\\|b and c\\\\ \|/);
 });
+
+test('生成ヘッダーは実際のコメントだけが対象で、文字列・正規表現内の DO NOT EDIT では免除されない', () => {
+  const r = repoWith({ 'src/w.ts': 'export const warning = "DO NOT EDIT";\nexport const re = /@generated/;\n' }, {
+    'src/w.ts': 'export const warning = "DO NOT EDIT";\nexport const re = /@generated/;\n// TODO: fix later\n',
+  });
+  assert.deepEqual(categories(r.violations), ['src/w.ts:3:deferral']);
+  assert.deepEqual(r.skipped, []);
+});
+
+test('ライセンス免除は著作権・ライセンス表示の行だけで、直下に足した TODO や説明は違反', () => {
+  const r = repoWith({ 'src/l.ts': '// SPDX-License-Identifier: MIT\nexport const l = 1;\n' }, {
+    'src/l.ts': '// SPDX-License-Identifier: MIT\n// TODO: fix later\nexport const l = 1;\n',
+    'src/m.ts': '// Copyright (c) 2026 Example\n// Licensed under the MIT License.\n// increment the counter\nexport const m = 1;\n',
+    'src/n.ts': '// Copyright (c) 2026 Example\n// All rights reserved.\nexport const n = 1;\n',
+  });
+  assert.deepEqual(categories(r.violations), ['src/l.ts:2:deferral', 'src/m.ts:1:explanation']);
+  assert.deepEqual(r.allowed.map((a) => a.category), ['license']);
+});
+
+test('export リストで公開される宣言の直前の JSDoc は公開 API のドキュメントとして許可', () => {
+  const r = repoWith({}, {
+    'src/e.ts': '/** Adds one. */\nfunction f(): number { return 1; }\n/** Local only. */\nfunction g(): number { return 2; }\n/** Renamed export. */\nconst h = 3;\n/** Default export. */\nclass K {}\nexport { f, h as hh };\nexport default K;\n',
+  });
+  assert.deepEqual(categories(r.violations), ['src/e.ts:3:explanation']);
+  assert.deepEqual(r.allowed.map((a) => a.category), ['public-api-doc', 'public-api-doc', 'public-api-doc']);
+});
