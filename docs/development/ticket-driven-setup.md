@@ -32,7 +32,7 @@ New repositories may have Actions disabled. Enable in repository Settings → Ac
 
 ## 4. Personal MCP (optional)
 
-Project MCP SSOT is `.rulesync/mcp.json` (empty). MCP outputs are **not** generated in this repo (Devin-only `rulesync.jsonc`: `agentsmd` + `agentsskills`). Personal MCP servers stay in user settings.
+Project MCP SSOT is `.rulesync/mcp.json` (empty). MCP outputs are **not** generated in this repo (`rulesync.jsonc` targets: `agentsmd`, `agentsskills`, and `claudecode` for rules + skills only). Personal MCP servers stay in user settings.
 
 ## 5. rulesync
 

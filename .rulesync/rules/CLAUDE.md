@@ -7,7 +7,7 @@ globs:
 ---
 <!--
   SSOT: Edit .rulesync/ and run `npm run rules:generate`.
-  Generated for Devin: AGENTS.md and .agents/skills/ (see rulesync.jsonc targets).
+  Generated: AGENTS.md and .agents/skills/ (Devin); CLAUDE.md and .claude/skills/ (Claude Code). See rulesync.jsonc targets.
 -->
 # Project overview
 
@@ -52,7 +52,7 @@ User-facing install/usage summary remains in [README.md](./README.md).
 
 Ticket-driven development using GitHub Issues. Setup: [docs/development/ticket-driven-setup.md](./docs/development/ticket-driven-setup.md).
 
-Skills live under `.rulesync/skills/` (SSOT). This repo’s `rulesync.jsonc` generates **Devin-facing outputs only** (`agentsmd` rules + `agentsskills` skills); Cursor/Claude/Codex outputs are not generated here (differs from [aidd-template-lean](https://github.com/kyto64/aidd-template-lean)).
+Skills live under `.rulesync/skills/` (SSOT). This repo’s `rulesync.jsonc` generates **Devin-facing outputs** (`agentsmd` rules + `agentsskills` skills) and **Claude Code outputs** (`claudecode` rules + skills → `CLAUDE.md`, `.claude/skills/`); Cursor/Codex outputs are not generated here (differs from [aidd-template-lean](https://github.com/kyto64/aidd-template-lean)).
 
 - `@skills:start-ticket <issue-number>` — start issue, plan, implement, open PR
 - `@skills:address-pr-feedback <pr-number>` — address review feedback

@@ -28,13 +28,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate rulesync SSOT (AGENTS.md and .agents/skills/)
+      - name: Validate rulesync SSOT (AGENTS.md, .agents/skills/, CLAUDE.md and .claude/)
         run: |
           npm run rules:generate
-          status="$(git status --porcelain --untracked-files=all -- AGENTS.md .agents/)"
+          status="$(git status --porcelain --untracked-files=all -- AGENTS.md .agents/ CLAUDE.md .claude/)"
           if [ -n "$status" ]; then
             echo "$status"
-            git diff -- AGENTS.md .agents/
-            echo "::error::rulesync outputs out of sync. Edit .rulesync/, run npm run rules:generate, commit AGENTS.md and .agents/skills/."
+            git diff -- AGENTS.md .agents/ CLAUDE.md .claude/
+            echo "::error::rulesync outputs out of sync. Edit .rulesync/, run npm run rules:generate, commit AGENTS.md, .agents/skills/, CLAUDE.md and .claude/skills/."
             exit 1
           fi
