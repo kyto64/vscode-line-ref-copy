@@ -22,6 +22,18 @@ updates:
         update-types:
           - version-update:semver-major
 
+  - package-ecosystem: npm
+    directory: /.github/comment-check
+    schedule:
+      interval: weekly
+    groups:
+      comment-check-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
